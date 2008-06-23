@@ -60,10 +60,9 @@ namespace :app do
         say "Development: '#{options.database}'"
         say "Production:  '#{options.database}'"
         say "Test:        '#{options.test_database}'"
-        say "I don't quite feel comfortable creating your database for you (I hardly know you).  So, make sure these databases have been created before proceeding."
       else
         cp 'config/database.sample.yml', db_config
-        say "I have copied database.sample.yml over.  Now, edit #{db_config} with your correct database settings."
+        say "I have copied database.sample.yml over.  Now, edit #{db_config} with your correct database settings, and re-run app:bootstrap."
         return
       end
     end
@@ -78,7 +77,19 @@ namespace :app do
     puts
 
     mkdir_p File.join(RAILS_ROOT, 'log')
-    %w(environment db:schema:load tmp:create).each { |t| Rake::Task[t].invoke }
+
+    Rake::Task['environment'].invoke
+    begin
+      say "Attempting to reset the database."
+      Rake::Task['db:reset'].invoke
+    rescue
+      say "rake db:reset failed, you should look into that."
+      puts $!.inspect
+      say "If this doesn't work, create your database manually and re-run this app:bootstrap task."
+      say "At any rate, I'm going to attempt to load the schema."
+      Rake::Task['db:schema:load'].invoke
+    end
+    Rake::Task["tmp:create"].invoke
     puts
   end
 
@@ -92,6 +103,7 @@ namespace :app do
     say "#{@app_name} is ready to roll."
     say "Okay, thanks for bootstrapping!  I know I felt some chemistry here, did you?"
     say "Now, start the application with 'script/server' and get to work!"
+    Rake::Task["db:test:clone"].invoke
   end
 
   task :setup do
