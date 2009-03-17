@@ -1,4 +1,5 @@
 namespace :app do
+  desc "Bootstrap your application"
   task :bootstrap => :setup do
     Debugger.start
     say "Bootstrapping #{@app_name}..."
